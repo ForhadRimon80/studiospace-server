@@ -27,12 +27,25 @@ try {
   const db = mongoClient.db("studiospace");
   const studioCollection = db.collection("studios");
 
+  //* Define Add New Studio route api url: http://localhost:5000/add-new-studio */
+  app.post("/add-new-studio", async (req, res) => {
+    try {
+      const studioData = req.body;
+      const result = await studioCollection.insertOne(studioData);
+
+      // console.log(result);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error adding studio:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   //* Define Home route */
   app.get("/", (req, res) => {
     res.send("Hello, World!");
   });
 
- 
   //* Start the server */
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
