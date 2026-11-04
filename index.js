@@ -72,6 +72,21 @@ try {
     }
   });
 
+  //* Define Delete Studio route api url: http://localhost:5000/my-studio-listings/:id */
+  app.delete("/my-studio-listings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+
+      const result = await studioCollection.deleteOne(query);
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error deleting studio:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   //* Define Home route */
   app.get("/", (req, res) => {
     res.send("Hello, World!");
