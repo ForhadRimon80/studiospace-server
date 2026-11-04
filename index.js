@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
 import cors from "cors";
 
@@ -50,6 +50,24 @@ try {
       res.status(200).json(studios);
     } catch (error) {
       console.error("Error fetching studios:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
+  //* Define Update Studio route api url: http://localhost:5000/my-studio-listings/:id */
+  app.patch("/my-studio-listings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+
+      const updateData = req.body;
+      const update = { $set: updateData };
+
+      const result = await studioCollection.updateOne(query, update);
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error updating studio:", error);
       res.status(500).send("Internal Server Error");
     }
   });
