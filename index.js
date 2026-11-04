@@ -41,6 +41,19 @@ try {
     }
   });
 
+  //* Define Get My Studios Listings route api url: http://localhost:5000/my-studio-listings/:userId */
+  app.get("/my-studio-listings/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const query = { hostId: userId };
+      const studios = await studioCollection.find(query).toArray();
+      res.status(200).json(studios);
+    } catch (error) {
+      console.error("Error fetching studios:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   //* Define Home route */
   app.get("/", (req, res) => {
     res.send("Hello, World!");
