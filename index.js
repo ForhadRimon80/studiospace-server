@@ -87,6 +87,19 @@ try {
     }
   });
 
+  //* Define Get All Studios route api url: http://localhost:5000/studios */
+  app.get("/studios", async (req, res) => {
+    try { 
+      const studios = await studioCollection.find().sort({ CreatedAt : -1}).toArray();
+      res.status(200).json(studios);
+
+    } catch (error) {
+      console.error("Error fetching studios:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  })
+
+
   //* Define Home route */
   app.get("/", (req, res) => {
     res.send("Hello, World!");
