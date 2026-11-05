@@ -128,6 +128,34 @@ try {
     }
   });
 
+  //* Define Get Bookings by User Email route api url: http://localhost:5000/bookings/:email */
+  app.get("/bookings/:email", async (req, res) => {
+    try {
+      const { email } = req.params;
+      const query = { bookingUserEmail: email };
+      const bookings = await bookingsCollection.find(query).toArray();
+
+      res.status(200).json(bookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
+  //* Define Delete Booking route api url: http://localhost:5000/my-bookings/:id */
+  app.delete("/my-bookings/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const query = { _id: id };
+      const result = await bookingsCollection.deleteOne(query);
+      res.status(200).json(result);
+
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  })
+
   //* Define Home route */
   app.get("/", (req, res) => {
     res.send("Hello, World!");
