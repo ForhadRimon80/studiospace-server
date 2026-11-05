@@ -26,6 +26,7 @@ try {
 
   const db = mongoClient.db("studiospace");
   const studioCollection = db.collection("studios");
+  const bookingsCollection = db.collection("bookings");
 
   //* Define Add New Studio route api url: http://localhost:5000/add-new-studio */
   app.post("/add-new-studio", async (req, res) => {
@@ -89,10 +90,9 @@ try {
 
   //* Define Get All Studios route api url: http://localhost:5000/studios */
   app.get("/studios", async (req, res) => {
-    try { 
-      const studios = await studioCollection.find().sort({ CreatedAt : -1}).toArray();
+    try {
+      const studios = await studioCollection.find().sort({ CreatedAt: -1 }).toArray();
       res.status(200).json(studios);
-
     } catch (error) {
       console.error("Error fetching studios:", error);
       res.status(500).send("Internal Server Error");
@@ -115,6 +115,18 @@ try {
     }
   });
 
+  //* Define Create Booking route api url: http://localhost:5000/booking */
+  app.post("/booking", async (req, res) => {
+    try {
+      const bookingData = req.body;
+      const result = await bookingsCollection.insertOne(bookingData);
+      console.log(result);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
 
   //* Define Home route */
   app.get("/", (req, res) => {
