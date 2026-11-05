@@ -115,6 +115,63 @@ try {
     }
   });
 
+  //* Define Increment Studio Views route api url: http://localhost:5000/studios/:id/views */
+  app.patch("/studios/:id/views", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({
+          message: "Invalid studio ID.",
+        });
+      }
+
+      const result = await studioCollection.updateOne(
+        { _id: new ObjectId(id) },
+        [
+          {
+            $set: {
+              views: {
+                $add: [
+                  {
+                    $convert: {
+                      input: "$views",
+                      to: "int",
+                      onError: 0,
+                      onNull: 0,
+                    },
+                  },
+                  1,
+                ],
+              },
+            },
+          },
+        ],
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          message: "Studio not found.",
+        });
+      }
+
+      const updatedStudio = await studioCollection.findOne(
+        { _id: new ObjectId(id) },
+        { projection: { views: 1 } },
+      );
+
+      return res.status(200).json({
+        message: "Studio view counted.",
+        views: updatedStudio?.views ?? 0,
+      });
+    } catch (error) {
+      console.error("Error incrementing studio views:", error);
+      return res.status(500).json({
+        message: "Internal Server Error",
+      });
+    }
+  });
+
   //* Define Create Booking route api url: http://localhost:5000/booking */
   app.post("/booking", async (req, res) => {
     try {
@@ -142,6 +199,61 @@ try {
     }
   });
 
+
+  //* Define Update Booking Status route api url: http://localhost:5000/dashboard/:id */
+  app.patch("/dashboard/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, requesterEmail } = req.body;
+
+      if (!["Pending", "Confirmed", "Completed", "Cancelled"].includes(status)) {
+        return res.status(400).json({ message: "Status must be Pending, Confirmed, Completed, or Cancelled." });
+      }
+
+      const bookingQuery = ObjectId.isValid(id)
+        ? { $or: [{ _id: id }, { _id: new ObjectId(id) }] }
+        : { _id: id };
+
+      const booking = await bookingsCollection.findOne(bookingQuery);
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found." });
+      }
+
+      if (!requesterEmail) {
+        return res.status(401).json({ message: "Requester email is required." });
+      }
+
+      const currentStatus = booking.status?.toLowerCase();
+      const isHost = booking.hostEmail === requesterEmail;
+      const isCustomer = booking.bookingUserEmail === requesterEmail;
+      const isPending = currentStatus?.includes("pending");
+      const canHostUpdate = isHost && (
+        (isPending && ["Confirmed", "Cancelled"].includes(status)) ||
+        (currentStatus === "confirmed" && status === "Completed")
+      );
+      const canCustomerCancel = isCustomer && isPending && status === "Cancelled";
+
+      if (!canHostUpdate && !canCustomerCancel) {
+        return res.status(403).json({
+          message: "You are not allowed to make this booking status change.",
+        });
+      }
+
+      const result = await bookingsCollection.updateOne(bookingQuery, { $set: { status } });
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: "Booking not found." });
+      }
+
+      res.status(200).json(result);
+      
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   //* Define Delete Booking route api url: http://localhost:5000/my-bookings/:id */
   app.delete("/my-bookings/:id", async (req, res) => {
     try {
@@ -149,12 +261,26 @@ try {
       const query = { _id: id };
       const result = await bookingsCollection.deleteOne(query);
       res.status(200).json(result);
-
     } catch (error) {
       console.error("Error deleting booking:", error);
       res.status(500).send("Internal Server Error");
     }
-  })
+  });
+
+  //* Define Dashboard route api url: http://localhost:5000/dashboard/:email */
+  app.get("/dashboard/:email", async (req, res) => {
+    try {
+      const { email } = req.params;
+      const query = { hostEmail: email };
+      const userBookings = await bookingsCollection.find(query).toArray();
+      const totalStudios = await studioCollection.countDocuments(query);
+
+      res.status(200).json({ totalStudios, userBookings });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
 
   //* Define Home route */
   app.get("/", (req, res) => {
