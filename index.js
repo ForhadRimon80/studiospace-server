@@ -97,7 +97,23 @@ try {
       console.error("Error fetching studios:", error);
       res.status(500).send("Internal Server Error");
     }
-  })
+  });
+
+  //* Define Get Studio by ID route api url: http://localhost:5000/studios/:id */
+  app.get("/studios/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const studio = await studioCollection.findOne(query);
+      if (!studio) {
+        return res.status(404).send("Studio not found");
+      }
+      res.status(200).json(studio);
+    } catch (error) {
+      console.error("Error fetching studio:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
 
 
   //* Define Home route */
